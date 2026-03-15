@@ -10,8 +10,8 @@ import (
 )
 
 type Weatherer interface {
-	HistoryTemps(location string, from, to time.Time) ([]float64, error)
-	ForecastTemps(location string, from, to time.Time) ([]float64, error)
+	HistoryTemps(city string, from, to time.Time) ([]float64, error)
+	ForecastTemps(city string, from, to time.Time) ([]float64, error)
 }
 
 type App struct {
@@ -51,9 +51,9 @@ func (a *App) HandleWeather(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	location := r.URL.Query().Get("location")
-	if location == "" {
-		writeJSON(w, http.StatusBadRequest, ErrorResponse{Error: "location parameter is required"})
+	city := r.URL.Query().Get("city")
+	if city == "" {
+		writeJSON(w, http.StatusBadRequest, ErrorResponse{Error: "city parameter is required"})
 		return
 	}
 
@@ -65,7 +65,7 @@ func (a *App) HandleWeather(w http.ResponseWriter, r *http.Request) {
 
 	if dateFromStr == "" && dateToStr == "" {
 		yesterday := today.AddDate(0, 0, -1)
-		t, err := a.client.HistoryTemps(location, yesterday, today)
+		t, err := a.client.HistoryTemps(city, yesterday, today)
 		if err != nil {
 			writeJSON(w, http.StatusInternalServerError, ErrorResponse{Error: err.Error()})
 			return
@@ -79,14 +79,14 @@ func (a *App) HandleWeather(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if dateTo.After(today) {
-			t, err := a.client.ForecastTemps(location, dateFrom, dateTo)
+			t, err := a.client.ForecastTemps(city, dateFrom, dateTo)
 			if err != nil {
 				writeJSON(w, http.StatusBadGateway, ErrorResponse{Error: err.Error()})
 				return
 			}
 			temps = append(temps, t...)
 		} else if !dateFrom.After(today) {
-			t, err := a.client.HistoryTemps(location, dateFrom, dateTo)
+			t, err := a.client.HistoryTemps(city, dateFrom, dateTo)
 			if err != nil {
 				writeJSON(w, http.StatusBadGateway, ErrorResponse{Error: err.Error()})
 				return

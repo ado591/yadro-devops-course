@@ -3,7 +3,6 @@ package internal
 import (
 	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
 	"net/url"
 	"time"
@@ -57,16 +56,12 @@ func (c *WeatherClient) get(path, include string) (*apiResponse, error) {
 	}
 	defer resp.Body.Close()
 
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("read body: %w", err)
-	}
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("API error %d: %s", resp.StatusCode, body)
+		return nil, fmt.Errorf("API error %d", resp.StatusCode)
 	}
 
 	var r apiResponse
-	if err := json.Unmarshal(body, &r); err != nil {
+	if err := json.NewDecoder(resp.Body).Decode(&r); err != nil {
 		return nil, fmt.Errorf("decode json: %w", err)
 	}
 	return &r, nil
@@ -115,7 +110,6 @@ func (c *WeatherClient) HistoryTemps(location string, from, to time.Time) ([]flo
 	return collectTemps(r.Days), nil
 }
 
-// Вообще прогноз погоды ничем от истории не отличается, но для расширяемости вынесла в отдельный метод
 func (c *WeatherClient) ForecastTemps(location string, from, to time.Time) ([]float64, error) {
 	return c.HistoryTemps(location, from, to)
 }

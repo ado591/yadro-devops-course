@@ -2,12 +2,14 @@ package internal
 
 import (
 	"sort"
+
+	"weather/internal/models"
 )
 
-func ComputeStats(temps []float64) TemperatureStats {
+func ComputeStats(temps []float64) models.TemperatureStats {
 	n := len(temps)
 	if n == 0 {
-		return TemperatureStats{}
+		return models.TemperatureStats{}
 	}
 
 	sorted := make([]float64, n)
@@ -24,13 +26,12 @@ func ComputeStats(temps []float64) TemperatureStats {
 
 	var median float64
 	if n%2 == 0 {
-		median = (sorted[n/2-1] + sorted[n/2]) / 2 //для четных всегда берем среднее арифметическое
+		median = (sorted[n/2-1] + sorted[n/2]) / 2
 	} else {
 		median = sorted[n/2]
 	}
 
-	//без округления, но можно добавить при желании
-	return TemperatureStats{
+	return models.TemperatureStats{
 		Average: sum / float64(n),
 		Median:  median,
 		Min:     min,

@@ -1,6 +1,10 @@
 package configs
 
-import "os"
+import (
+	"fmt"
+	"os"
+	"regexp"
+)
 
 const (
 	ServiceName    = "weather"
@@ -16,7 +20,6 @@ type Config struct {
 	Port    string
 }
 
-// обертка с дефолтными значениями
 func getEnv(key, def string) string {
 	if v := os.Getenv(key); v != "" {
 		return v
@@ -24,11 +27,17 @@ func getEnv(key, def string) string {
 	return def
 }
 
-func LoadConfig() Config {
+var digitsOnly = regexp.MustCompile(`^\d+$`)
+
+func LoadConfig() (Config, error) {
+	port := getEnv("PORT", defaultPort)
+	if !digitsOnly.MatchString(port) {
+		return Config{}, fmt.Errorf("invalid PORT value %q: must contain digits only", port)
+	}
 	return Config{
 		Version: getEnv("VERSION", defaultVersion),
 		Author:  getEnv("AUTHOR", defaultAuthor),
 		APIKey:  os.Getenv("API_KEY"),
-		Port:    getEnv("PORT", defaultPort),
-	}
+		Port:    port,
+	}, nil
 }

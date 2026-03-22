@@ -1,10 +1,4 @@
-package internal
-
-type InfoResponse struct {
-	Version string `json:"version"`
-	Service string `json:"service"`
-	Author  string `json:"author"`
-}
+package models
 
 type TemperatureStats struct {
 	Average float64 `json:"average"`
@@ -20,8 +14,4 @@ type WeatherData struct {
 type WeatherResponse struct {
 	Service string      `json:"service"`
 	Data    WeatherData `json:"data"`
-}
-
-type ErrorResponse struct {
-	Error string `json:"error"`
 }

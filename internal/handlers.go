@@ -3,10 +3,12 @@ package internal
 import (
 	"encoding/json"
 	"errors"
+	"log"
 	"net/http"
 	"time"
 
 	"weather/configs"
+	"weather/internal/models"
 )
 
 type Weatherer interface {
@@ -31,10 +33,10 @@ func writeJSON(responseWriter http.ResponseWriter, status int, data any) {
 
 func (app *App) HandleInfo(responseWriter http.ResponseWriter, request *http.Request) {
 	if request.Method != http.MethodGet {
-		writeJSON(responseWriter, http.StatusBadRequest, ErrorResponse{Error: "/info only supports GET"})
+		writeJSON(responseWriter, http.StatusBadRequest, models.ErrorResponse{Error: "/info only supports GET"})
 		return
 	}
-	writeJSON(responseWriter, http.StatusOK, InfoResponse{
+	writeJSON(responseWriter, http.StatusOK, models.InfoResponse{
 		Version: app.config.Version,
 		Service: configs.ServiceName,
 		Author:  app.config.Author,
@@ -43,17 +45,17 @@ func (app *App) HandleInfo(responseWriter http.ResponseWriter, request *http.Req
 
 func (a *App) HandleWeather(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
-		writeJSON(w, http.StatusBadRequest, ErrorResponse{Error: "/weather only supports GET"})
+		writeJSON(w, http.StatusBadRequest, models.ErrorResponse{Error: "/weather only supports GET"})
 		return
 	}
 	if a.config.APIKey == "" {
-		writeJSON(w, http.StatusUnauthorized, ErrorResponse{Error: "API_KEY not configured"})
+		writeJSON(w, http.StatusUnauthorized, models.ErrorResponse{Error: "API_KEY not configured"})
 		return
 	}
 
 	city := r.URL.Query().Get("city")
 	if city == "" {
-		writeJSON(w, http.StatusBadRequest, ErrorResponse{Error: "city parameter is required"})
+		writeJSON(w, http.StatusBadRequest, models.ErrorResponse{Error: "city parameter is required"})
 		return
 	}
 
@@ -67,37 +69,40 @@ func (a *App) HandleWeather(w http.ResponseWriter, r *http.Request) {
 		yesterday := today.AddDate(0, 0, -1)
 		t, err := a.client.HistoryTemps(city, yesterday, today)
 		if err != nil {
-			writeJSON(w, http.StatusInternalServerError, ErrorResponse{Error: err.Error()})
+			log.Printf("HistoryTemps error: %v", err)
+			writeJSON(w, http.StatusInternalServerError, models.ErrorResponse{Error: err.Error()})
 			return
 		}
 		temps = t
 	} else {
 		dateFrom, dateTo, err := ParseDateRange(dateFromStr, dateToStr, today)
 		if err != nil {
-			writeJSON(w, http.StatusBadRequest, ErrorResponse{Error: err.Error()})
+			writeJSON(w, http.StatusBadRequest, models.ErrorResponse{Error: err.Error()})
 			return
 		}
 
 		if dateTo.After(today) {
 			t, err := a.client.ForecastTemps(city, dateFrom, dateTo)
 			if err != nil {
-				writeJSON(w, http.StatusBadGateway, ErrorResponse{Error: err.Error()})
+				log.Printf("ForecastTemps error: %v", err)
+				writeJSON(w, http.StatusBadGateway, models.ErrorResponse{Error: err.Error()})
 				return
 			}
 			temps = append(temps, t...)
 		} else if !dateFrom.After(today) {
 			t, err := a.client.HistoryTemps(city, dateFrom, dateTo)
 			if err != nil {
-				writeJSON(w, http.StatusBadGateway, ErrorResponse{Error: err.Error()})
+				log.Printf("HistoryTemps error: %v", err)
+				writeJSON(w, http.StatusBadGateway, models.ErrorResponse{Error: err.Error()})
 				return
 			}
 			temps = append(temps, t...)
 		}
 	}
 
-	writeJSON(w, http.StatusOK, WeatherResponse{
+	writeJSON(w, http.StatusOK, models.WeatherResponse{
 		Service: configs.ServiceName,
-		Data:    WeatherData{TemperatureC: ComputeStats(temps)},
+		Data:    models.WeatherData{TemperatureC: ComputeStats(temps)},
 	})
 }
 

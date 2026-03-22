@@ -1,0 +1,24 @@
+services:
+  weather:
+    build: .
+    env_file:
+      - .env.example
+    ports:
+      - "127.0.0.1:${PORT:-8000}:${PORT:-8000}"
+    restart: unless-stopped
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    deploy:
+      resources:
+        limits:
+          cpus: "0.50"
+          memory: 128M
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:${PORT:-8000}/info || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 5s

@@ -1,6 +1,6 @@
 services:
   weather:
-    image: atsova15/weather:latest
+    image: atsova15/weather:1.0.0
     build: .
     env_file:
       - .env.example

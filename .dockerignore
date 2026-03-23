@@ -1,6 +1,9 @@
 .git
 .gitignore
 .env
+.env.example
 *.md
+*.json
+*.yml
 weather
 weather_server

@@ -11,7 +11,7 @@ RUN CGO_ENABLED=0 GOOS=linux go build -o weather .
 
 FROM alpine:3.21@sha256:c3f8e73fdb79deaebaa2037150150191b9dcbfba68b4a46d70103204c53f4709
 
-RUN addgroup -S app && adduser -S app -G app && apk add --no-cache wget
+RUN addgroup -S app && adduser -S app -G app && apk add --no-cache wget=1.21.4-r0
 
 WORKDIR /app
 

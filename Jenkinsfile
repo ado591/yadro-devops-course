@@ -1,6 +1,15 @@
 pipeline {
     agent { label 'worker' }
 
+    triggers {
+        gitlab(
+            triggerOnPush: true,
+            triggerOnMergeRequest: true,
+            triggerOnAcceptedMergeRequest: true,
+            branchFilterType: 'All'
+        )
+    }
+
     environment {
         DOCKER_IMAGE = 'atsova15/weather'
         DOCKER_TAG = "${GIT_COMMIT[0..6]}"

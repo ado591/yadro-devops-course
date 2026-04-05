@@ -54,7 +54,11 @@ func (c *WeatherClient) get(path, include string) (*apiResponse, error) {
 	if err != nil {
 		return nil, fmt.Errorf("request failed: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if cerr := resp.Body.Close(); cerr != nil {
+			err = cerr
+		}
+	}()
 
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("API error %d", resp.StatusCode)

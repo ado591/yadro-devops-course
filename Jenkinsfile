@@ -37,10 +37,10 @@ pipeline {
         }
 
         stage('Deploy') {
-            /*when {
+            when {
                 beforeInput true
                 branch 'master'
-            }*/
+            }
             input {
                 message 'Deploy to prod? (YES if it is Friday evening)'
                 ok 'Deploy'

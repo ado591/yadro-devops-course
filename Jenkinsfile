@@ -1,10 +1,6 @@
 pipeline {
     agent { label 'worker' }
 
-    options {
-        gitLabConnection('gitlab-yadro')
-    }
-
     triggers {
         gitlab(
             triggerOnPush: true,
@@ -17,6 +13,10 @@ pipeline {
     environment {
         DOCKER_IMAGE = 'atsova15/weather'
         DOCKER_TAG = "${GIT_COMMIT[0..6]}"
+    }
+
+    options {
+        gitLabConnection('gitlab-yadro')
     }
 
     stages {

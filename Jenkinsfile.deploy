@@ -41,7 +41,7 @@ pipeline {
                     docker rm   ${CONTAINER_NAME} || true
                     docker run -d \
                         --name ${CONTAINER_NAME} \
-                        -p ${APP_PORT}:8080 \
+                        -p ${APP_PORT}:${APP_PORT} \
                         --env-file /etc/weather.env \
                         --restart unless-stopped \
                         ${DOCKER_IMAGE}:${params.IMAGE_TAG}

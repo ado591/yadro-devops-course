@@ -31,18 +31,12 @@ pipeline {
 
         stage('Build') {
             when {
-                anyOf {
-                    changeRequest()
-                    branch 'master'
-                    branch 'main'
-                    buildingTag()
-                }
+                changeRequest()
             }
             agent { label 'staging' }
             steps {
                 checkout scm
                 sh 'docker build -t ${DOCKER_IMAGE}:${DOCKER_TAG} .'
-                sh 'docker tag ${DOCKER_IMAGE}:${DOCKER_TAG} ${DOCKER_IMAGE}:latest'
             }
         }
 

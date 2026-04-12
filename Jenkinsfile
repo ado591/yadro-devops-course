@@ -1,6 +1,10 @@
 pipeline {
     agent { label 'worker' }
 
+    options {
+        gitLabConnection('gitlab-yadro')
+    }
+
     triggers {
         gitlab(
             triggerOnPush: true,

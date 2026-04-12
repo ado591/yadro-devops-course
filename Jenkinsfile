@@ -13,7 +13,7 @@ pipeline {
 
     stages {
         stage('Lint & SAST') {
-            agent any
+            agent { label 'staging || production' }
             steps {
                 checkout scm
                 script {
@@ -24,7 +24,7 @@ pipeline {
         }
 
         stage('Test') {
-            agent any
+            agent { label 'staging || production' }
             steps {
                 checkout scm
                 runTests()

@@ -1,14 +1,7 @@
-pipeline {
-    agent { label 'worker' }
+@Library('jenkins-shared-lib') _
 
-    triggers {
-        gitlab(
-            triggerOnPush: true,
-            triggerOnMergeRequest: true,
-            triggerOnAcceptedMergeRequest: true,
-            branchFilterType: 'All'
-        )
-    }
+pipeline {
+    agent none
 
     environment {
         DOCKER_IMAGE = 'atsova15/weather'
@@ -20,54 +13,87 @@ pipeline {
     }
 
     stages {
-        stage('Lint') {
+        stage('Lint & SAST') {
+            agent any
             steps {
-                sh 'golangci-lint run ./...'
+                checkout scm
+                lintAndSast()
             }
         }
 
         stage('Test') {
+            agent any
             steps {
-                sh 'go test ./tests/... -v -coverprofile=coverage.out -coverpkg=./...'
-                sh 'go tool cover -func=coverage.out'
+                checkout scm
+                runTests()
             }
         }
 
         stage('Build') {
+            when {
+                anyOf {
+                    changeRequest()
+                    branch 'master'
+                    branch 'main'
+                    buildingTag()
+                }
+            }
+            agent { label 'staging' }
             steps {
+                checkout scm
                 sh 'docker build -t ${DOCKER_IMAGE}:${DOCKER_TAG} .'
                 sh 'docker tag ${DOCKER_IMAGE}:${DOCKER_TAG} ${DOCKER_IMAGE}:latest'
             }
         }
 
-        stage('Deploy') {
+        stage('Push') {
             when {
-                beforeInput true
-                branch 'master'
+                anyOf {
+                    branch 'master'
+                    branch 'main'
+                    buildingTag()
+                }
             }
-            input {
-                message 'Deploy to prod? (YES if it is Friday evening)'
-                ok 'Deploy'
+            agent { label 'staging' }
+            steps {
+                buildAndPush(env.DOCKER_IMAGE, env.DOCKER_TAG)
+            }
+        }
+
+        stage('Deploy to Stage') {
+            when {
+                anyOf {
+                    branch 'master'
+                    branch 'main'
+                }
             }
             steps {
-                withCredentials([usernamePassword(
-                    credentialsId: 'dockerhub-creds',
-                    usernameVariable: 'DOCKER_USER',
-                    passwordVariable: 'DOCKER_PASS'
-                )]) {
-                    sh 'echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin'
-                  
-                    sh 'docker push ${DOCKER_IMAGE}:${DOCKER_TAG}'
-                    sh 'docker push ${DOCKER_IMAGE}:latest'
-                }
+                build job: 'deploy-app',
+                    parameters: [
+                        string(name: 'IMAGE_TAG',   value: env.DOCKER_TAG),
+                        string(name: 'ENVIRONMENT', value: 'staging')
+                    ],
+                    wait: true
+            }
+        }
+
+        stage('Deploy to Prod') {
+            when {
+                buildingTag()
+                tag pattern: '^v.*', comparator: 'REGEXP'
+            }
+            steps {
+                build job: 'deploy-app',
+                    parameters: [
+                        string(name: 'IMAGE_TAG',   value: env.DOCKER_TAG),
+                        string(name: 'ENVIRONMENT', value: 'production')
+                    ],
+                    wait: true
             }
         }
     }
 
     post {
-        always {
-            sh 'docker logout'
-        }
         success {
             updateGitlabCommitStatus name: 'build', state: 'success'
         }

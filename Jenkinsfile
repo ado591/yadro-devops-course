@@ -5,7 +5,6 @@ pipeline {
 
     environment {
         DOCKER_IMAGE = 'atsova15/weather'
-        DOCKER_TAG = "${GIT_COMMIT[0..6]}"
     }
 
     options {
@@ -17,6 +16,9 @@ pipeline {
             agent any
             steps {
                 checkout scm
+                script {
+                    env.DOCKER_TAG = GIT_COMMIT[0..6]
+                }
                 lintAndSast()
             }
         }

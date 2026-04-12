@@ -1,0 +1,67 @@
+@Library('jenkins-shared-lib') _
+
+pipeline {
+    agent { label params.ENVIRONMENT }
+
+    parameters {
+        string(
+            name: 'IMAGE_TAG',
+            defaultValue: 'latest',
+        )
+        choice(
+            name: 'ENVIRONMENT',
+            choices: ['staging', 'production'],
+        )
+    }
+
+    environment {
+        DOCKER_IMAGE    = 'atsova15/weather'
+        CONTAINER_NAME  = "weather-${params.ENVIRONMENT}"
+        APP_PORT        = '8080'
+    }
+
+    stages {
+        stage('Pull Image') {
+            steps {
+                withCredentials([usernamePassword(
+                    credentialsId: 'dockerhub-creds',
+                    usernameVariable: 'DOCKER_USER',
+                    passwordVariable: 'DOCKER_PASS'
+                )]) {
+                    sh 'echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin'
+                    sh "docker pull ${DOCKER_IMAGE}:${params.IMAGE_TAG}"
+                }
+            }
+        }
+
+        stage('Run Container') {
+            steps {
+                sh """
+                    docker stop ${CONTAINER_NAME} || true
+                    docker rm   ${CONTAINER_NAME} || true
+                    docker run -d \
+                        --name ${CONTAINER_NAME} \
+                        -p ${APP_PORT}:8080 \
+                        --env-file /etc/weather.env \
+                        --restart unless-stopped \
+                        ${DOCKER_IMAGE}:${params.IMAGE_TAG}
+                """
+            }
+        }
+
+        stage('Smoke Test') {
+            steps {
+                smokeTest(env.APP_PORT)
+            }
+        }
+    }
+
+    post {
+        always {
+            sh 'docker logout || true'
+        }
+        failure {
+            echo "Deploy to ${params.ENVIRONMENT} FAILED"
+        }
+    }
+}

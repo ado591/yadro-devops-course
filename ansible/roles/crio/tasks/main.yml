@@ -1,0 +1,56 @@
+---
+- name: Install required dependencies
+  ansible.builtin.apt:
+    name:
+      - apt-transport-https
+      - ca-certificates
+      - curl
+      - gnupg
+    state: present
+    update_cache: true
+
+- name: Create keyrings directory
+  ansible.builtin.file:
+    path: /etc/apt/keyrings
+    state: directory
+    mode: "0755"
+
+- name: Download CRI-O GPG key
+  ansible.builtin.shell:
+    cmd: >
+      curl -fsSL {{ crio_gpg_key_url }}
+      | gpg --dearmor -o /etc/apt/keyrings/cri-o-apt-keyring.gpg
+    creates: /etc/apt/keyrings/cri-o-apt-keyring.gpg
+
+- name: Add CRI-O APT repository
+  ansible.builtin.apt_repository:
+    repo: >-
+      deb [signed-by=/etc/apt/keyrings/cri-o-apt-keyring.gpg]
+      {{ crio_apt_repo_url }} /
+    filename: cri-o
+    state: present
+
+- name: Install CRI-O
+  ansible.builtin.apt:
+    name: cri-o
+    state: present
+    update_cache: true
+
+- name: Enable and start CRI-O service
+  ansible.builtin.systemd:
+    name: crio
+    enabled: true
+    state: started
+    daemon_reload: true
+
+- name: Load overlay kernel module
+  community.general.modprobe:
+    name: overlay
+    state: present
+  when: ansible_virtualization_type not in ['docker', 'container', 'podman']
+
+- name: Persist overlay module
+  ansible.builtin.copy:
+    dest: /etc/modules-load.d/crio.conf
+    content: "overlay\n"
+    mode: "0644"

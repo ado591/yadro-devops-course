@@ -1,0 +1,23 @@
+---
+- name: Verify kubeadm installation
+  hosts: all
+  become: true
+  tasks:
+    - name: Collect package facts
+      ansible.builtin.package_facts:
+        manager: apt
+
+    - name: Assert kubeadm is installed
+      ansible.builtin.assert:
+        that: "'kubeadm' in ansible_facts.packages"
+        fail_msg: "kubeadm package is not installed"
+
+    - name: Check kubeadm hold status
+      ansible.builtin.command: apt-mark showhold
+      register: apt_hold_output
+      changed_when: false
+
+    - name: Assert kubeadm is held
+      ansible.builtin.assert:
+        that: "'kubeadm' in apt_hold_output.stdout"
+        fail_msg: "kubeadm is not pinned in apt"

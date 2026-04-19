@@ -1,0 +1,49 @@
+---
+- name: Install required dependencies
+  ansible.builtin.apt:
+    name:
+      - apt-transport-https
+      - ca-certificates
+      - curl
+      - gnupg
+    state: present
+    update_cache: true
+
+- name: Create keyrings directory
+  ansible.builtin.file:
+    path: /etc/apt/keyrings
+    state: directory
+    mode: "0755"
+
+- name: Download Kubernetes GPG key
+  ansible.builtin.shell:
+    cmd: >
+      curl -fsSL {{ kubernetes_gpg_key_url }}
+      | gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+    creates: /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+
+- name: Add Kubernetes APT repository
+  ansible.builtin.apt_repository:
+    repo: >-
+      deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg]
+      {{ kubernetes_apt_repo_url }} /
+    filename: kubernetes
+    state: present
+
+- name: Install kubelet
+  ansible.builtin.apt:
+    name: kubelet
+    state: present
+    update_cache: true
+  notify: restart kubelet
+
+- name: Hold kubelet at current version
+  ansible.builtin.dpkg_selections:
+    name: kubelet
+    selection: hold
+
+- name: Enable kubelet service
+  ansible.builtin.systemd:
+    name: kubelet
+    enabled: true
+    daemon_reload: true

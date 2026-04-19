@@ -22,8 +22,6 @@ ansible-galaxy collection install -r requirements.yml
 | `crio_gpg_key_url` | string | формируется из `crio_version` | URL GPG-ключа |
 | `crio_apt_repo_url` | string | формируется из `crio_version` | URL APT-репозитория |
 
-Для Ubuntu 22.04 нужно переопределить `crio_os: "xUbuntu_22.04"`.
-
 ## Пример использования
 
 ```yaml

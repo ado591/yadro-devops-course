@@ -18,7 +18,6 @@ ansible-galaxy collection install -r requirements.yml
 | Переменная | Тип | По умолчанию | Описание |
 |------------|-----|-------------|----------|
 | `crio_version` | string | `"1.32"` | Версия CRI-O |
-| `crio_os` | string | `"xUbuntu_24.04"` | Строка OS для репозитория |
 | `crio_gpg_key_url` | string | формируется из `crio_version` | URL GPG-ключа |
 | `crio_apt_repo_url` | string | формируется из `crio_version` | URL APT-репозитория |
 

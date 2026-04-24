@@ -1,5 +1,4 @@
 ---
 crio_version: "1.32"
-crio_os: "xUbuntu_24.04"
 crio_gpg_key_url: "https://pkgs.k8s.io/addons:/cri-o:/stable:/v{{ crio_version }}/deb/Release.key"
 crio_apt_repo_url: "https://pkgs.k8s.io/addons:/cri-o:/stable:/v{{ crio_version }}/deb/"

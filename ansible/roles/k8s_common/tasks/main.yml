@@ -1,0 +1,29 @@
+---
+- name: Disable swap
+  ansible.builtin.command: swapoff -a
+  become: true
+- name: Disable swap in /etc/fstab
+  ansible.builtin.replace:
+    path: /etc/fstab
+    regexp: '^([^#].*swap.*)$'
+    replace: '#\\1'
+- name: Enable ipv4 forwarding
+  ansible.builtin.sysctl:
+    name: net.ipv4.ip_forward
+    value: "1"
+    state: present
+    reload: yes
+- name: Enable br_netfilter module
+  ansible.builtin.modprobe:
+    name: br_netfilter
+    state: present
+- name: Enable overlay module
+  ansible.builtin.modprobe:
+    name: overlay
+    state: present
+- name: Save modules for autoloading
+  copy:
+    dest: /etc/modules-load.d/k8s.conf
+    content: |
+      overlay
+      br_netfilter

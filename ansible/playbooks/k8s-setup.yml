@@ -1,0 +1,8 @@
+---
+- name: Install cri-o, kubelet and kubeadm
+  hosts: all
+  become: true
+  roles:
+    - role: crio
+    - role: kubelet
+    - role: kubeadm

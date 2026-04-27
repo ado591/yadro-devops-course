@@ -1,0 +1,4 @@
+---
+kubernetes_version: "1.32"
+kubernetes_gpg_key_url: "https://pkgs.k8s.io/core:/stable:/v{{ kubernetes_version }}/deb/Release.key"
+kubernetes_apt_repo_url: "https://pkgs.k8s.io/core:/stable:/v{{ kubernetes_version }}/deb/"

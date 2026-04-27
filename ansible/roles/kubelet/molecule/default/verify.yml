@@ -1,0 +1,33 @@
+---
+- name: Verify kubelet installation
+  hosts: all
+  become: true
+  tasks:
+    - name: Collect package facts
+      ansible.builtin.package_facts:
+        manager: apt
+
+    - name: Assert kubelet is installed
+      ansible.builtin.assert:
+        that: "'kubelet' in ansible_facts.packages"
+        fail_msg: "kubelet package is not installed"
+
+    - name: Check kubelet hold status
+      ansible.builtin.command: apt-mark showhold
+      register: apt_hold_output
+      changed_when: false
+
+    - name: Assert kubelet is held
+      ansible.builtin.assert:
+        that: "'kubelet' in apt_hold_output.stdout"
+        fail_msg: "kubelet is not pinned in apt"
+
+    - name: Check kubelet service is enabled
+      ansible.builtin.systemd:
+        name: kubelet
+      register: kubelet_service
+
+    - name: Assert kubelet service is enabled
+      ansible.builtin.assert:
+        that: kubelet_service.status.UnitFileState == "enabled"
+        fail_msg: "kubelet service is not enabled"

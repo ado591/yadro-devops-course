@@ -1,0 +1,23 @@
+---
+- name: Verify CRI-O installation
+  hosts: all
+  become: true
+  tasks:
+    - name: Check that cri-o package is installed
+      ansible.builtin.package_facts:
+        manager: apt
+
+    - name: Assert cri-o is installed
+      ansible.builtin.assert:
+        that: "'cri-o' in ansible_facts.packages"
+        fail_msg: "cri-o package is not installed"
+
+    - name: Check crio service is running
+      ansible.builtin.systemd:
+        name: crio
+      register: crio_service
+
+    - name: Assert crio service is active
+      ansible.builtin.assert:
+        that: crio_service.status.ActiveState == "active"
+        fail_msg: "crio service is not active"
